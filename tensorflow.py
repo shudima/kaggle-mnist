@@ -5,10 +5,6 @@
 
 from tensorflow.examples.tutorials.mnist import input_data
 mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
-
-
-# In[2]:
-
 get_ipython().magic(u'matplotlib inline')
 
 from __future__ import division
@@ -16,16 +12,16 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 
 
-# In[ ]:
+# In[2]:
 
-
-epochs = 10000
+epochs = 100000
 batch_size = 100
 use_dropout = False
 dropout_keep_prob = 0.5
-learning_rate = 0.5
+learning_rate = 1
 hidden_layer = True
-hidden_layer_neurons = 30
+hidden_layer_neurons = 50
+reg_rate = 0.0001
 
 x = tf.placeholder(tf.float32, [None, 784])
 
@@ -56,11 +52,11 @@ else:
 y_ = tf.placeholder(tf.float32, [None, 10])
 cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]))
 
-# L2 regularization for the fully connected parameters.
+
 regularizers = (tf.nn.l2_loss(W1) + tf.nn.l2_loss(b1) +
               tf.nn.l2_loss(W2) + tf.nn.l2_loss(b2))
-# Add the regularization term to the loss.
-cross_entropy += 5e-4 * regularizers
+
+cross_entropy += reg_rate * regularizers
 
 train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(cross_entropy)
 
@@ -93,4 +89,32 @@ correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 print ''
 print(sess.run(accuracy, feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob : 0.5}))
+
+
+# In[12]:
+
+import pandas as pd
+import numpy as np
+
+
+# In[34]:
+
+df = pd.read_csv('test.csv')
+
+
+# In[36]:
+
+predicted = sess.run(y, feed_dict={x: df.values, keep_prob : dropout_keep_prob})
+predicted = np.array([np.argmax(p) for p in predicted])
+
+# In[39]:
+
+df = df[['label']]
+df['imageId'] = df.index + 1
+
+
+# In[43]:
+
+df.to_csv('tensorflow-sub.csv', index=False)
+
 
